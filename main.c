@@ -4,6 +4,8 @@
 #include<sys/socket.h>
 #include<netinet/in.h>
 #include<arpa/inet.h>
+#include<stdio.h>
+#include <errno.h>
 
 #include "common.h"
 
@@ -22,7 +24,7 @@ void *serverTask(void *args){
     printf("Recieved: %d %d %s\n",request.pos,request.is_read,request.msg);
 
     close(clientFileDescriptor);
-
+    
 }
 
 int main(int argc, char* argv[]){
