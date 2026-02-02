@@ -11,7 +11,18 @@
 char** stringArray;
 
 void *serverTask(void *args){
-    //Do server-y things here
+    int clientFileDescriptor = (int)(long)args;
+    char msg[COM_BUFF_SIZE];
+    
+    ClientRequest request;
+    //add exception handling
+    read(clientFileDescriptor,msg,12);
+    printf("Reading from client...\n");
+    parseMsg(msg,request);
+    printf("Recieved: %d %d %s\n",request.pos,request.is_read,request.msg);
+
+    close(clientFileDescriptor);
+
 }
 
 int main(int argc, char* argv[]){
