@@ -6,6 +6,7 @@
 #include<arpa/inet.h>
 #include<stdio.h>
 #include <errno.h>
+#include<stdlib.h>
 
 #include "common.h"
 
@@ -20,11 +21,13 @@ void *serverTask(void *args){
     //add exception handling
     read(clientFileDescriptor,msg,12);
     printf("Reading from client...\n");
-    parseMsg(msg,request);
+    ParseMsg(msg,&request);
     printf("Recieved: %d %d %s\n",request.pos,request.is_read,request.msg);
 
     close(clientFileDescriptor);
     
+    return NULL;
+
 }
 
 int main(int argc, char* argv[]){
