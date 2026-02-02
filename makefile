@@ -1,17 +1,17 @@
 CC = gcc
 CFLAGS = -Wall -Werror -Wvla -lpthread -ggdb3 -lm
 DEPS = timer.h common.h
-OBJ = main.o client.o attacker.o
+OBJ = main.o
 
 main: $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS)
 	
 .PHONY: client
-matrixgen: client.o
+client: client.o
 	$(CC) -o $@ $^ $(CFLAGS)
 
 .PHONY: attacker
-matrixgen: attacker.o
+attacker: attacker.o
 	$(CC) -o $@ $^ $(CFLAGS)
 
 .PHONY: memtest
