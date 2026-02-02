@@ -40,15 +40,18 @@ int main(int argc, char* argv[]){
     //Server Loop
     if(bind(serverFileDescriptor, (struct sockaddr*)&sockAddr, sizeof(sockAddr)) >= 0){
         printf("socket has been created\n");
-        listen(serverFileDescriptor, 2000); //I don't know what to do with this magic number
-        while(1){
-            for(int i = 0; i < COM_NUM_REQUEST; i++){
-            
-                clientFileDescriptor = accept(serverFileDescriptor, NULL, NULL);
-                printf("Connected to client %d\n",clientFileDescriptor);
-                pthread_create(&threadHandles[i], NULL, serverTask, (void *)(long)clientFileDescriptor);
-            }
+        listen(serverFileDescriptor, COM_NUM_REQUEST*2); //I don't know what to do with this magic number
+        
+        for(int i = 0; i < COM_NUM_REQUEST; i++){
+        
+            clientFileDescriptor = accept(serverFileDescriptor, NULL, NULL);
+            printf("Connected to client %d\n",clientFileDescriptor);
+            pthread_create(&threadHandles[i], NULL, serverTask, (void *)(long)clientFileDescriptor);
         }
+
+        for(int i = 0; i < COM_NUM_REQUEST; i++)
+            pthread_join(threadHandles[i], NULL);
+
         close(serverFileDescriptor);
     }
     else{
