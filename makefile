@@ -18,13 +18,22 @@ attacker: attacker.o
 memtest: main client attacker
 	valgrind --tool=memcheck --leak-check=yes ./main 1000 127.0.0.1 3000 &
 	./client 1000 127.0.0.1 3000
-	#./attacker 1000 127.0.0.1 3000
 
 .PHONY: threadtest
 threadtest: main client attacker
 	valgrind --tool=helgrind ./main 1000 127.0.0.1 3000 &
 	./client 1000 127.0.0.1 3000
-	#./attacker 1000 127.0.0.1 3000
+
+.PHONY: attackertest
+attackertest : main attacker
+	./main 1000 127.0.0.1 3000 &
+	./attacker 1000 127.0.0.1 3000
+
+.PHONY: clienttest
+attackertest : main client
+	./main 1000 127.0.0.1 3000 &
+	./client 1000 127.0.0.1 3000
+
 
 .PHONY: clean
 clean:
