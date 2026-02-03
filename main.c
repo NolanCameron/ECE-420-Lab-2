@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200112L //fixes an error where rwlocks are undefined
 #include <pthread.h>
 #include <memory.h>
 #include<sys/types.h>
@@ -6,12 +7,13 @@
 #include<arpa/inet.h>
 #include<stdio.h>
 #include <errno.h>
-#include<stdlib.h>
+#include <stdlib.h>
 
 #include "common.h"
 
 //Global Vars
 char** stringArray;
+pthread_rwlock_t* locks;
 
 void *serverTask(void *args){
     int clientFileDescriptor = (int)(long)args;
@@ -20,14 +22,31 @@ void *serverTask(void *args){
     ClientRequest request;
     //add exception handling
     read(clientFileDescriptor,msg,12);
-    printf("Reading from client...\n");
+    printf("Reading from client: %d\n",clientFileDescriptor);
     ParseMsg(msg,&request);
     printf("Recieved: %d %d %s\n",request.pos,request.is_read,request.msg);
 
-    close(clientFileDescriptor);
-    
-    return NULL;
+    if(request.is_read){
+        //reading
+        printf("reading");
+        pthread_rwlock_rdlock(&locks[request.pos]);
+        printf("before: %s",stringArray[request.pos]);//remove after testing
+        getContent(request.msg,request.pos,&stringArray[request.pos]);
+        printf("after: %s",stringArray[request.pos]);//remove after testing
+        pthread_rwlock_unlock(&locks[request.pos]);
+    }else{
+        //writing
+        printf("riting");
+        pthread_rwlock_wrlock(&locks[request.pos]);
+        //set content
+        pthread_rwlock_unlock(&locks[request.pos]);
 
+    }
+
+    close(clientFileDescriptor);
+
+    return NULL;
+    
 }
 
 int main(int argc, char* argv[]){
@@ -47,9 +66,13 @@ int main(int argc, char* argv[]){
     pthread_t* threadHandles = malloc(COM_NUM_REQUEST*sizeof(pthread_t));
 
     stringArray = (char**) malloc(numOfStrings * sizeof(char*));
+    locks = malloc(numOfStrings * sizeof(pthread_rwlock_t));
+
     for (int i = 0; i < numOfStrings; i ++){
         stringArray[i] = (char*) malloc(COM_BUFF_SIZE * sizeof(char));
         sprintf(stringArray[i], "String %d: the initial value", i);
+        pthread_rwlock_init(&locks[i],NULL);
+
     }
 
 
