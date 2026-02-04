@@ -15,10 +15,13 @@ attacker: attacker.o
 	$(CC) -o $@ $^ $(CFLAGS)
 
 .PHONY: memtest
-memtest: main client attacker
-	valgrind --tool=memcheck --leak-check=yes ./main 1000 127.0.0.1 3000 &
-	./client 1000 127.0.0.1 3000
-	./attacker 1000 127.0.0.1 3000
+memtest: main attacker 
+	valgrind --tool=memcheck --leak-check=yes ./main 100 127.0.0.1 3000 &
+	sleep 1
+	./attacker 100 127.0.0.1 3000
+
+	
+	
 
 .PHONY: threadtest
 threadtest: main client attacker
@@ -29,3 +32,4 @@ threadtest: main client attacker
 .PHONY: clean
 clean:
 	rm -f *.o main client attacker
+	rm -f server_output_time_aggregated

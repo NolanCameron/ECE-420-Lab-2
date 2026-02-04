@@ -14,7 +14,6 @@
 #include <sys/time.h>
 
 
-//Global Vars
 char** stringArray;
 pthread_rwlock_t** rwlockArray;
 int numOfStringsGlobal;
@@ -33,8 +32,7 @@ void *serverTask(void *arg){
     int requestID = args->requestID;
     free(arg);
     char msg[COM_BUFF_SIZE];
-
-    
+    gettimeofday(&startTimes[requestID], NULL);
     ClientRequest request;
     //add exception handling
     int total = 0;
@@ -84,8 +82,7 @@ int main(int argc, char* argv[]){
        
     int numOfStrings = strtol(argv[1], NULL, 10);
     numOfStringsGlobal = numOfStrings;
-    rwlockArray = (pthread_rwlock_t**) malloc(numOfStrings * sizeof(pthread_rwlock_t*));
-
+    rwlockArray = malloc(numOfStrings * sizeof(pthread_rwlock_t*));
     times = (double*) malloc(COM_NUM_REQUEST * sizeof(double));
     char *serverIP = argv[2];
     int serverPort = strtol(argv[3], NULL, 10);
@@ -106,7 +103,7 @@ int main(int argc, char* argv[]){
     for (int i = 0; i < numOfStrings; i ++){
         stringArray[i] = (char*) malloc(COM_BUFF_SIZE * sizeof(char));
         sprintf(stringArray[i], "String %d: the initial value", i);
-        rwlockArray[i] = (pthread_rwlock_t*) malloc(sizeof(pthread_rwlock_t));
+        rwlockArray[i] = malloc(sizeof(pthread_rwlock_t));
         pthread_rwlock_init(rwlockArray[i], NULL);
     }
 
@@ -115,17 +112,18 @@ int main(int argc, char* argv[]){
     if(bind(serverFileDescriptor, (struct sockaddr*)&sockAddr, sizeof(sockAddr)) >= 0){
         printf("socket has been created\n");
         listen(serverFileDescriptor, COM_NUM_REQUEST*2); //I don't know what to do with this magic number
-        
-        for(int i = 0; i < COM_NUM_REQUEST; i++){
-                    
-            clientFileDescriptor = accept(serverFileDescriptor, NULL, NULL);            
-            printf("Connected to client %d\n",clientFileDescriptor);
-            Threadargs* args = malloc(sizeof(Threadargs)); 
-            args->clientFileDescriptor = clientFileDescriptor;
-            args->requestID = i;
-            gettimeofday(&startTimes[i], NULL);            
-            pthread_create(&threadHandles[i], NULL, serverTask, args);
+        while(1){
+            for(int i = 0; i < COM_NUM_REQUEST; i++){                        
+                clientFileDescriptor = accept(serverFileDescriptor, NULL, NULL);            
+                printf("Connected to client %d\n",clientFileDescriptor);
+                Threadargs* args = malloc(sizeof(Threadargs)); 
+                args->clientFileDescriptor = clientFileDescriptor;
+                args->requestID = i;                        
+                pthread_create(&threadHandles[i], NULL, serverTask, args);
+            }
         }
+        
+        
 
         for(int i = 0; i < COM_NUM_REQUEST; i++)
             pthread_join(threadHandles[i], NULL);
