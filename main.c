@@ -10,9 +10,22 @@
 
 
 #include "common.h"
+#include "timer.h"
 #include <unistd.h>
 #include <sys/time.h>
+ 
+//#define DEBUG //Uncomment for debugging
 
+#ifdef DEBUG
+#define DEBUG_TEST 1
+#else
+#define DEBUG_TEST 0
+#endif
+
+/*
+#define D(fmt, ...) \
+             do { if (DEBUG_TEST) fprintf(stdout, fmt, __VA_ARGS__); } while (0)
+*/
 
 char** stringArray;
 pthread_rwlock_t** rwlockArray;
@@ -20,6 +33,11 @@ int numOfStringsGlobal;
 double* times;
 struct timeval* startTimes = NULL;
 struct timeval* endTime = NULL;
+
+double* startTimesAvg = NULL;
+double* endTimesAvg = NULL;
+double* timesAvg = NULL;
+
 
 typedef struct {
     int clientFileDescriptor;
@@ -45,7 +63,10 @@ void *serverTask(void *arg){
         total += r;
     }
 
-    printf("Reading from client...\n");
+    //Get Time for Saving
+    GET_TIME(startTimesAvg[requestID]);
+
+    //printf("Reading from client...\n");
     msg[COM_BUFF_SIZE-1] = '\0';
     ParseMsg(msg,&request);
     if (request.pos < 0 || request.pos >= numOfStringsGlobal) {
@@ -53,7 +74,7 @@ void *serverTask(void *arg){
         return NULL;
     }
 
-    printf("Recieved: %d %d %s\n",request.pos,request.is_read,request.msg);
+    //printf("Recieved: %d %d %s\n",request.pos,request.is_read,request.msg);
     if (request.is_read){
         pthread_rwlock_rdlock(rwlockArray[request.pos]);
         getContent(msg, request.pos, stringArray);
@@ -68,10 +89,16 @@ void *serverTask(void *arg){
         write(clientFd,msg,COM_BUFF_SIZE);
     }
     gettimeofday(&endTime[requestID], NULL);
+
+    //Get Time for Saving
+    GET_TIME(endTimesAvg[requestID]);
+
+    timesAvg[requestID] = endTimesAvg[requestID] - startTimesAvg[requestID];
+
     times[requestID] =
     (endTime[requestID].tv_sec - startTimes[requestID].tv_sec) * 1e6 +
     (endTime[requestID].tv_usec - startTimes[requestID].tv_usec);
-    printf("Request %d completed in %lf microseconds\n", requestID, times[requestID]);
+    //printf("Request %d completed in %lf microseconds\n", requestID, times[requestID]);
     close(clientFd);
 
     return NULL;
@@ -98,6 +125,9 @@ int main(int argc, char* argv[]){
     pthread_t* threadHandles = malloc(COM_NUM_REQUEST*sizeof(pthread_t));
     startTimes = malloc(COM_NUM_REQUEST * sizeof(struct timeval));
     endTime = malloc(COM_NUM_REQUEST * sizeof(struct timeval)); 
+    startTimesAvg = malloc(COM_NUM_REQUEST * sizeof(double));
+    endTimesAvg = malloc(COM_NUM_REQUEST * sizeof(double));
+    timesAvg = malloc(COM_NUM_REQUEST * sizeof(double));
 
     stringArray = (char**) malloc(numOfStrings * sizeof(char*));
     for (int i = 0; i < numOfStrings; i ++){
@@ -110,28 +140,32 @@ int main(int argc, char* argv[]){
 
     //Server Loop
     if(bind(serverFileDescriptor, (struct sockaddr*)&sockAddr, sizeof(sockAddr)) >= 0){
-        printf("socket has been created\n");
+        //printf("socket has been created\n");
         listen(serverFileDescriptor, COM_NUM_REQUEST*2); //I don't know what to do with this magic number
         while(1){
             for(int i = 0; i < COM_NUM_REQUEST; i++){                        
                 clientFileDescriptor = accept(serverFileDescriptor, NULL, NULL);            
-                printf("Connected to client %d\n",clientFileDescriptor);
+                //printf("Connected to client %d\n",clientFileDescriptor);
                 Threadargs* args = malloc(sizeof(Threadargs)); 
                 args->clientFileDescriptor = clientFileDescriptor;
                 args->requestID = i;                        
                 pthread_create(&threadHandles[i], NULL, serverTask, args);
             }
+
+            for(int i = 0; i < COM_NUM_REQUEST; i++)
+                pthread_join(threadHandles[i], NULL);
+
+            saveTimes(timesAvg, COM_NUM_REQUEST);
         }
         
         
 
-        for(int i = 0; i < COM_NUM_REQUEST; i++)
-            pthread_join(threadHandles[i], NULL);
+
 
         close(serverFileDescriptor);
     }
     else{
-        printf("socket creation failed\n");
+        //printf("socket creation failed\n");
     }
     saveTimes(times, COM_NUM_REQUEST);
 
