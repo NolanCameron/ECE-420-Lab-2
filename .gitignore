@@ -1,0 +1,9 @@
+*.o
+demos/simpleClient
+demos/simpleServer
+*.log
+main
+client
+server
+attacker
+vgcore.*
