@@ -5,6 +5,8 @@ OBJ = main.o
 
 main: $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS)
+
+all: client attacker main
 	
 .PHONY: client
 client: client.o
