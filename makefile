@@ -26,9 +26,9 @@ memtest: main attacker
 threadtest: main client attacker
 	valgrind --tool=helgrind ./main 1000 127.0.0.1 3000 &
 	./client 1000 127.0.0.1 3000
-	./attacker 1000 127.0.0.1 3000
 
 .PHONY: clean
 clean:
 	rm -f *.o main client attacker
 	rm -f server_output_time_aggregated
+	rm *.log
