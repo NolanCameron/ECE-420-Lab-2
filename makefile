@@ -5,6 +5,8 @@ OBJ = main.o
 
 main: $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS)
+
+all: client attacker main
 	
 .PHONY: client
 client: client.o
@@ -19,9 +21,6 @@ memtest: main attacker
 	valgrind --tool=memcheck --leak-check=yes ./main 100 127.0.0.1 3000 &
 	sleep 1
 	./attacker 100 127.0.0.1 3000
-
-	
-	
 
 .PHONY: threadtest
 threadtest: main client attacker
