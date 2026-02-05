@@ -8,3 +8,4 @@ server
 attacker
 vgcore.*
 *.out
+server_output_time_aggregated

@@ -50,7 +50,7 @@ void *serverTask(void *arg){
     int requestID = args->requestID;
     free(arg);
     char msg[COM_BUFF_SIZE];
-    gettimeofday(&startTimes[requestID], NULL);
+    //gettimeofday(&startTimes[requestID], NULL);
     ClientRequest request;
     //add exception handling
     int total = 0;
@@ -67,7 +67,8 @@ void *serverTask(void *arg){
     GET_TIME(startTimesAvg[requestID]);
 
     //printf("Reading from client...\n");
-    msg[COM_BUFF_SIZE-1] = '\0';
+
+    //msg[COM_BUFF_SIZE-1] = '\0'; //Why this?
     ParseMsg(msg,&request);
     if (request.pos < 0 || request.pos >= numOfStringsGlobal) {
         close(clientFd);
@@ -88,16 +89,20 @@ void *serverTask(void *arg){
         pthread_rwlock_unlock(rwlockArray[request.pos]);
         write(clientFd,msg,COM_BUFF_SIZE);
     }
-    gettimeofday(&endTime[requestID], NULL);
+    //gettimeofday(&endTime[requestID], NULL);
 
     //Get Time for Saving
     GET_TIME(endTimesAvg[requestID]);
 
     timesAvg[requestID] = endTimesAvg[requestID] - startTimesAvg[requestID];
 
+    /*
+
     times[requestID] =
     (endTime[requestID].tv_sec - startTimes[requestID].tv_sec) * 1e6 +
     (endTime[requestID].tv_usec - startTimes[requestID].tv_usec);
+
+    */
     //printf("Request %d completed in %lf microseconds\n", requestID, times[requestID]);
     close(clientFd);
 
@@ -167,7 +172,7 @@ int main(int argc, char* argv[]){
     else{
         //printf("socket creation failed\n");
     }
-    saveTimes(times, COM_NUM_REQUEST);
+    //saveTimes(times, COM_NUM_REQUEST);
 
     //Cleanup
     for (int i = 0; i < numOfStrings; i++) {
